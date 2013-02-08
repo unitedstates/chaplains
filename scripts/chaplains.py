@@ -49,6 +49,9 @@ def collect(options = {}):
             info.pop("one")
         info['id'] = uid
         if 'sponsor' in info:
+            #fix a recurring typo on House Chaplain website            
+            info['sponsor'] = info['sponsor'].replace("Rep. Rep.", "Rep.")
+            
             m = re.findall("\(([A-Z])-([A-Z]+)\)", info["sponsor"])
             info['party'] = m[0][0]
             info['state'] = m[0][1]
