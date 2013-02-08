@@ -1,24 +1,16 @@
-import os, sys
+import os, os.path, errno, sys, traceback
 import re
+import logging
+import htmlentitydefs
 import json
 import datetime, time
 from lxml import html, etree
 import scrapelib
 
+config = None
+
 # scraper should be instantiated at class-load time, so that it can rate limit appropriately
 scraper = scrapelib.Scraper(requests_per_minute=120, follow_robots=False, retry_attempts=3)
-
-class UnmatchedIdentifer(Exception):
-  def __init__(self, id_type, id_value, help_url):
-    super(UnmatchedIdentifer, self).__init__("%s=%s %s" % (id_type, str(id_value), help_url))
-
-def format_datetime(obj):
-  if isinstance(obj, datetime.datetime):
-    return eastern_time_zone.localize(obj.replace(microsecond=0)).isoformat()
-  elif isinstance(obj, str):
-    return obj
-  else:
-    return None
 
 # Download file at `url`, cache to `destination`. 
 # Takes many options to customize behavior.
@@ -64,7 +56,7 @@ def download(url, destination=None, options={}):
         response = scraper.urlopen(url)
       body = response.bytes # str(...) tries to encode as ASCII the already-decoded unicode content
     except scrapelib.HTTPError as e:
-      logging.error("Error downloading %s:\n\n%s" % (url, format_exception(e)))
+      #logging.error("Error downloading %s:\n\n%s" % (url, format_exception(e)))
       return None
 
     # don't allow 0-byte files
@@ -183,49 +175,3 @@ def data_dir():
     data = "data"
 
   return data
-
-# if email settings are supplied, email the text - otherwise, just print it
-def admin(body):
-  try:
-    if isinstance(body, Exception):
-      body = format_exception(body)
-
-    logging.error(body) # always print it
-
-    if config:
-      details = config.get('email', None)
-      if details:
-        send_email(body)
-    
-  except Exception as exception:
-    print "Exception logging message to admin, halting as to avoid loop"
-    print format_exception(exception)
-
-def format_exception(exception):
-  exc_type, exc_value, exc_traceback = sys.exc_info()
-  return "\n".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-
-# this should only be called if the settings are definitely there
-def send_email(message):
-  settings = config['email']
-
-  # adapted from http://www.doughellmann.com/PyMOTW/smtplib/
-  msg = MIMEText(message)
-  msg.set_unixfrom('author')
-  msg['To'] = email.utils.formataddr(('Recipient', settings['to']))
-  msg['From'] = email.utils.formataddr((settings['from_name'], settings['from']))
-  msg['Subject'] = "%s - %i" % (settings['subject'], int(time.time()))
-
-  server = smtplib.SMTP(settings['hostname'])
-  try:
-    server.ehlo()
-    if settings['starttls'] and server.has_extn('STARTTLS'):
-      server.starttls()
-      server.ehlo()
-
-    server.login(settings['user_name'], settings['password'])
-    server.sendmail(settings['from'], [settings['to']], msg.as_string())
-  finally:
-    server.quit()
-
-  logging.info("Sent email to %s" % settings['to'])
