@@ -1,28 +1,9 @@
-import os, os.path, errno, sys, traceback
-import re, htmlentitydefs
+import os, sys
+import re
 import json
-from pytz import timezone
 import datetime, time
 from lxml import html, etree
 import scrapelib
-import pprint
-import logging
-
-import smtplib
-import email.utils
-from email.mime.text import MIMEText
-import getpass
-
-
-# read in an opt-in config file for changing directories and supplying email settings
-# returns None if it's not there, and this should always be handled gracefully
-path = "config.yml"
-if os.path.exists(path):
-  config = yaml.load(open(path, 'r'))
-else:
-  config = None
-
-eastern_time_zone = timezone('US/Eastern')
 
 # scraper should be instantiated at class-load time, so that it can rate limit appropriately
 scraper = scrapelib.Scraper(requests_per_minute=120, follow_robots=False, retry_attempts=3)
