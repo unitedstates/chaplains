@@ -57,7 +57,16 @@ As of February 8, 2013, there are 633 such guest prayers on the website. This sc
 ## Internal method of member lookup
 To get the [Congressional Bioguide](http://bioguide.congress.gov/biosearch/biosearch.asp) ID for each member, I wrote a small library called `member_lookup.py`, which compares the plaintext name of the member to the NYT API for that session
 
-Here's how it works:
+### Setup
+You need to get an [NYT API key](http://developer.nytimes.com/docs/reference/keys) with access to the Congress api. Put it in a file called keys.json in the root directory like so:
+```
+   {
+      "nytimes": "[key]"
+   }
+```
+"keys.json" is included in .gitignore
+
+###How it works:
 - If fed a string for the name, the function assumes it's in first, middle, last order. Can also accept a list of names in that order
 - If there are three names, not including initials, it adds both the surname and a hyphenated middle-last name to the list of names to search, since no one can agree on whether Sheila Jackson Lee uses a hyphen
 - Likewise, if fed a surname with a hyphen, this function also searches for that name with just a space and with just the second of the two names
